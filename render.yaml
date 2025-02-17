@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: biosonica-socket
+    env: node
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: PORT
+        value: 4000
+      - key: SWAGGER_PORT
+        value: 4001
+      - key: HOST
+        value: 0.0.0.0
