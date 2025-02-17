@@ -11,6 +11,10 @@ const options = {
     },
     servers: [
       {
+        url: 'https://biosonica-socket.onrender.com',
+        description: 'Production server',
+      },
+      {
         url: 'http://localhost:4000',
         description: 'Local development server',
       },
