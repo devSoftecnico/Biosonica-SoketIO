@@ -97,6 +97,6 @@ server.on("connection", socket => {
   });
 });
 
-server.listen(process.env.PORT, process.env.HOST, () => {
-  console.log(`Servidor escuchando en ${process.env.HOST}:${process.env.PORT}`);
+server.listen(process.env.PORT, '0.0.0.0', () => {
+  console.log(`Server listening on port ${process.env.PORT}`);
 });
