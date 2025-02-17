@@ -6,8 +6,8 @@ services:
     startCommand: npm start
     envVars:
       - key: PORT
-        value: 4000
+        value: 1000
       - key: SWAGGER_PORT
-        value: 4001
+        value: 1001
       - key: HOST
         value: 0.0.0.0
