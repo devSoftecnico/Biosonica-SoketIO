@@ -4,6 +4,7 @@ const admin = require("./firebase-config");
 const express = require('express');
 const cors = require('cors');
 const { swaggerUi, specs } = require('./swagger');
+const WebSocket = require('ws');
 
 const port = process.env.PORT || 4000;
 const app = express();
@@ -14,33 +15,16 @@ app.use(cors());
 // Serve Swagger documentation
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
 
-// Start Express server for Swagger docs
-app.listen(process.env.SWAGGER_PORT, () => {
-  console.log(`Swagger documentation available at http://${process.env.HOST}:${process.env.SWAGGER_PORT}/api-docs`);
-});
+// Create WebSocket server
+const wss = new WebSocket.Server({ noServer: true });
 
-const server = net.createServer();
-
-server.on("connection", socket => {
+// Handle WebSocket connections
+wss.on('connection', async (ws) => {
   console.log("Nuevo cliente conectado");
 
-  socket.on("data", async data => {
-    const rawData = data.toString();
-    
-    // Check if the data looks like an HTTP request
-    if (rawData.match(/^(GET|POST|PUT|DELETE|OPTIONS|HEAD|PATCH|TRACE|CONNECT) /)) {
-      console.log("Received HTTP request instead of raw TCP data");
-      socket.write(
-        JSON.stringify({
-          status: "error",
-          message: "This is a TCP socket server, not an HTTP server. Please use raw TCP connection."
-        })
-      );
-      return;
-    }
-
+  ws.on('message', async (data) => {
     try {
-      const authData = JSON.parse(rawData);
+      const authData = JSON.parse(data);
       console.log("Datos recibidos:", authData);
 
       if (authData.type === "google_signin" && authData.idToken) {
@@ -48,55 +32,60 @@ server.on("connection", socket => {
           const decodedToken = await admin.auth().verifyIdToken(authData.idToken);
           console.log(`Usuario autenticado: ${decodedToken.name || decodedToken.email}`);
           
-          socket.write(
-            JSON.stringify({
-              status: "success",
-              message: "Autenticación exitosa",
-              user: {
-                uid: decodedToken.uid,
-                email: decodedToken.email,
-                name: decodedToken.name
-              }
-            })
-          );
+          ws.send(JSON.stringify({
+            status: "success",
+            message: "Autenticación exitosa",
+            user: {
+              uid: decodedToken.uid,
+              email: decodedToken.email,
+              name: decodedToken.name
+            }
+          }));
         } catch (authError) {
           console.error("Error al verificar el token:", authError);
-          socket.write(
-            JSON.stringify({
-              status: "error",
-              message: "Error de autenticación: Token inválido",
-              error: authError.message
-            })
-          );
+          ws.send(JSON.stringify({
+            status: "error",
+            message: "Error de autenticación: Token inválido",
+            error: authError.message
+          }));
         }
       } else {
-        socket.write(
-          JSON.stringify({
-            status: "error",
-            message: "Solicitud inválida: Se requiere tipo 'google_signin' y token ID"
-          })
-        );
+        ws.send(JSON.stringify({
+          status: "error",
+          message: "Solicitud inválida: Se requiere tipo 'google_signin' y token ID"
+        }));
       }
     } catch (error) {
       console.error("Error al procesar los datos:", error);
-      socket.write(
-        JSON.stringify({
-          status: "error",
-          message: "Error al procesar los datos"
-        })
-      );
+      ws.send(JSON.stringify({
+        status: "error",
+        message: "Error al procesar los datos"
+      }));
     }
   });
 
-  socket.on("close", () => {
+  ws.on('close', () => {
     console.log("Cliente desconectado");
   });
 
-  socket.on("error", err => {
-    console.error("Error en el socket:", err.message);
+  ws.on('error', (err) => {
+    console.error("Error en el WebSocket:", err.message);
   });
 });
 
-server.listen(process.env.PORT, '0.0.0.0', () => {
+// Create HTTP server
+const server = app.listen(process.env.PORT, () => {
   console.log(`Server listening on port ${process.env.PORT}`);
+});
+
+// Handle upgrade requests for WebSocket
+server.on('upgrade', (request, socket, head) => {
+  wss.handleUpgrade(request, socket, head, (ws) => {
+    wss.emit('connection', ws, request);
+  });
+});
+
+// Start Express server for Swagger docs
+app.listen(process.env.SWAGGER_PORT, () => {
+  console.log(`Swagger documentation available at http://${process.env.HOST}:${process.env.SWAGGER_PORT}/api-docs`);
 });
