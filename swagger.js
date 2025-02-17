@@ -11,13 +11,9 @@ const options = {
     },
     servers: [
       {
-        url: 'https://biosonica-socket.onrender.com',
-        description: 'Production server',
-      },
-      {
-        url: 'http://localhost:4000',
-        description: 'Local development server',
-      },
+        url: process.env.NODE_ENV === 'production' ? 'https://biosonica-socket.onrender.com' : 'http://localhost:4000',
+        description: process.env.NODE_ENV === 'production' ? 'Production server' : 'Local development server'
+      }
     ],
     components: {
       schemas: {
