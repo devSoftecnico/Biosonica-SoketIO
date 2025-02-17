@@ -6,7 +6,8 @@ const cors = require('cors');
 const { swaggerUi, specs } = require('./swagger');
 const WebSocket = require('ws');
 
-const port = process.env.PORT || 4000;
+// Set default port for production (Render) and development
+const port = process.env.PORT || 10000;
 const app = express();
 
 // Enable CORS for all routes
@@ -77,8 +78,8 @@ wss.on('connection', async (ws) => {
 });
 
 // Create HTTP server
-const server = app.listen(process.env.PORT, () => {
-  console.log(`Server listening on port ${process.env.PORT}`);
+const server = app.listen(port, () => {
+  console.log(`Server listening on port ${port}`);
 });
 
 // Handle upgrade requests for WebSocket
