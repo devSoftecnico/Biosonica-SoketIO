@@ -12,6 +12,9 @@ const app = express();
 // Enable CORS for all routes
 app.use(cors());
 
+// Enable JSON parsing
+app.use(express.json());
+
 // Serve Swagger documentation
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
 
@@ -83,9 +86,4 @@ server.on('upgrade', (request, socket, head) => {
   wss.handleUpgrade(request, socket, head, (ws) => {
     wss.emit('connection', ws, request);
   });
-});
-
-// Start Express server for Swagger docs
-app.listen(process.env.SWAGGER_PORT, () => {
-  console.log(`Swagger documentation available at http://${process.env.HOST}:${process.env.SWAGGER_PORT}/api-docs`);
 });
